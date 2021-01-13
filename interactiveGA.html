@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<script type="text/javascript" src="./ga.js"></script>
+</head>
+<style type="text/css">
+	.gaItem {
+		border-style: solid;
+		border-color: darkgrey ;
+		width: 200px ;
+		float: left ;
+	}
+	.svgBox {
+		width: 200px ;
+		height: 200px ;
+	}
+</style>
+<body>
+	<!-- Button to confirm selection -->
+	<button onclick="epoch()">epoch me!</button>
+	<br/>
+	<!-- Stuff the svg renders into boxes -->
+	<div id="boxes"> </div>
+
+	<script type="text/javascript">
+
+
+	let populationSize = 16 ;
+	// create the GA population
+	let myGA = new ga(populationSize, 9) ;
+	// array to store elections
+	let choose = [0,0] ;
+	let pop = [] ;
+	window.onload = function() {
+		createDrawingSurface() ;
+		createClickables() ;
+		pop = myGA.getPopulation() ;
+		displayPhenotypes(pop) ;
+	}
+	function createDrawingSurface() {
+		// create the render surfaces
+		for (var i = 0; i < populationSize; i++) {
+			let box = document.getElementById('boxes') ;
+			// div attributes id, class, data
+			// has child svg elements
+			box.innerHTML +=
+			'<div id="item'+i+
+			'" class="gaItem" data-id="'+i+
+			'"><svg id="box'+i+
+			'" class="svgBox"/> </div>\n' ;
+		}
+	}
+	function createClickables() {
+		//  add clickables
+		// this is the interactive selection
+		for (var i = 0; i < populationSize; i++) {
+			let clickable = document.getElementById('item'+i) ;
+			clickable.onclick = function() {
+				let id = this.dataset.id ;
+				// FIFO on the choose with this selection
+				if(choose[0] != id && choose[1] != id) {
+					// color the selected boxes when clicked
+					let item = document.getElementById('item'+choose[1]) ;
+					item.setAttribute('style', 'border-color:darkgrey') ;
+					item = document.getElementById('item'+parseInt(id)) ;
+					item.setAttribute('style', 'border-color:red') ;
+					// FIFO
+					choose[1] = choose[0] ;
+					choose[0] = parseInt(id) ;
+				}
+			}
+		}
+	} // end
+	function epoch() {
+		pop = myGA.epoch(pop[choose[0]], pop[choose[1]]) ;
+		displayPhenotypes() ;
+	}
+	// create the phenotype for an individual
+	function displayPhenotypes() {
+		for (var i = 0; i < pop.length; i++) {
+			// we need to map the population 0-255
+			// to what makes sense for the phenotype
+			generateItem('box'+i,
+				map(pop[i][0], 0, 255, 1, 5), // number
+				map(pop[i][1], 0, 255, 0, 255), // hue
+				map(pop[i][2], 0, 255, 0, 100), // color spacing
+				map(pop[i][3], 0, 255, 0, 100), // saturation
+				map(pop[i][4], 0, 255, 0, 1), // opacity
+				map(pop[i][5], 0, 255, 5, 50), // width
+				map(pop[i][6], 0, 255, 50, 300), // height
+				map(pop[i][7], 0, 255, 0, 10), // x- spacing
+				map(pop[i][8], 0, 255, 0, 100) // wobly amount
+			);
+		}
+	}
+	// parameters are
+	// rects
+	// name of render box,
+	// p0: number of, p1: base Hue, p2: color spacing, p3: saturation
+	// p4: opacity, p5: width, p6: height, p7: spacing, p8: wobly amount
+	function generateItem(boxName, p0,p1,p2,p3,p4,p5,p6,p7,p8) {
+		let box = document.getElementById(boxName) ;
+		box.innerHTML = "" ;
+		for (var i = 0; i < p0; i++) {
+			let hue = p1 + (i*p2) ;
+			let sat = p3 ;
+			let opacity = p4 ;
+			let width = p5 ;
+			let height = p6 ;
+			let spacing = i*(width*p7) ;
+			let wobly = p8 ;
+			box.innerHTML += woblyRect(width+spacing,10,width,height, wobly,
+				'fill="hsla('+(hue)+', '+sat+'%,70%,'+opacity+')"') ;
+		}
+	}
+
+	function woblyRect(x,y,w,h, amt, fill) {
+		let out = '<polygon points="'+x+','+y+
+		' '+(rand(-amt,amt)+x+w)+','+(rand(-amt,amt)+y)+
+		' '+(rand(-amt,amt)+x+w)+','+(rand(-amt,amt)+y+h)+
+		' '+(rand(-amt,amt)+x)+','+(rand(-amt,amt)+y+h)+' "'+fill+'/>' ;
+		return out ;
+	}
+	function woblyCircle(cx,cy,r, amt, fill) {
+		let out = '<polygon points="';
+		for (var theta = 0; theta <= Math.PI*2; theta = theta+Math.PI*0.1) {
+			let x = cx+Math.cos(theta)*r ;
+			let y = cy+Math.sin(theta)*r ;
+			out += (rand(-amt,amt)+x)+ ',' + (rand(-amt,amt)+y) +' ' ;
+		}
+		out += ' "'+fill+'/>'
+		return out ;
+	}
+	// random value between min and max
+	function rand(min, max) {
+	    return Math.random() * (max - min) + min;
+	}
+	// linear mapping from one range of numbers to another
+	function map (num, in_min, in_max, out_min, out_max) {
+	  return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+	}
+	</script>
+</body>
+</html>
+
+
+26
